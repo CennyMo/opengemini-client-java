@@ -13,6 +13,9 @@ import reactor.core.publisher.Mono;
 import reactor.netty.ByteBufMono;
 import reactor.netty.http.client.HttpClient;
 import reactor.netty.http.client.HttpClientSecurityUtils;
+import reactor.netty.transport.NameResolverProvider;
+
+import java.util.function.Consumer;
 
 public class OpenGeminiReactorClient extends BaseClient {
     private final HttpClient client;
@@ -23,7 +26,10 @@ public class OpenGeminiReactorClient extends BaseClient {
         client = client.responseTimeout(conf.getTimeout());
         int connectionTimeoutMs = (int) conf.getConnectTimeout().toMillis();
         client = client.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectionTimeoutMs);
-
+        Consumer<NameResolverProvider.NameResolverSpec> addressResolverGroup = conf.getAddressResolverGroup();
+        if (addressResolverGroup != null) {
+            client.resolver(addressResolverGroup);
+        }
         if (conf.isTlsEnabled()) {
             TlsConfig tlsConfig = conf.getTlsConfig();
             client = client.secure(spec -> {
